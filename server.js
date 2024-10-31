@@ -7,12 +7,20 @@ const app = express();
 const server = http.createServer(app);
 
 // Allowed origins for CORS
-const allowedOrigins = ["http://localhost:3000", "https://mztools.us.kg/zmeet"];
+const allowedOrigins = ["http://localhost:3000", "https://mztools.us.kg"];
 
+// CORS configuration for Socket.io
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins, // Allow multiple origins
+    origin: (origin, callback) => {
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
+    credentials: true, // Allow cookies and authorization headers
   },
 });
 
@@ -24,16 +32,22 @@ app.use(cors({
     } else {
       callback(new Error("Not allowed by CORS"));
     }
-  }
+  },
+  methods: ["GET", "POST"],
+  credentials: true, // Allow credentials if needed
 }));
 
+// Socket.io event handlers
 io.on("connection", (socket) => {
+  console.log("A user connected:", socket.id);
+
   socket.on("join-room", ({ roomId, signal }) => {
     socket.join(roomId);
     socket.to(roomId).emit("connect-peer", signal);
   });
 
   socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
     socket.broadcast.emit("user-disconnected", socket.id);
   });
 });
