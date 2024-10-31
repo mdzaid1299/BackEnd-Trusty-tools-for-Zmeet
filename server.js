@@ -6,25 +6,19 @@ const cors = require("cors");
 const app = express();
 const server = http.createServer(app);
 
-// Use environment variable or default to localhost
-const allowedOrigin = process.env.CLIENT_ORIGIN || "http://localhost:3000";
-
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigin,
+    origin: "https://mztools.us.kg/zmeet", // Update this to your frontend's URL
     methods: ["GET", "POST"],
   },
 });
 
-app.use(
-  cors({
-    origin: allowedOrigin,
-  })
-);
+app.use(cors({ origin: "https://mztools.us.kg/zmeet" }));
 
 io.on("connection", (socket) => {
-  socket.on("join-room", (signal) => {
-    socket.broadcast.emit("connect-peer", signal);
+  socket.on("join-room", ({ roomId, signal }) => {
+    socket.join(roomId);
+    socket.to(roomId).emit("connect-peer", signal);
   });
 
   socket.on("disconnect", () => {
