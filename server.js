@@ -6,14 +6,26 @@ const cors = require("cors");
 const app = express();
 const server = http.createServer(app);
 
+// Allowed origins for CORS
+const allowedOrigins = ["http://localhost:3000", "https://mztools.us.kg/zmeet"];
+
 const io = new Server(server, {
   cors: {
-    origin: "https://mztools.us.kg/zmeet", // Update this to your frontend's URL
+    origin: allowedOrigins, // Allow multiple origins
     methods: ["GET", "POST"],
   },
 });
 
-app.use(cors({ origin: "https://mztools.us.kg/zmeet" }));
+// CORS middleware for Express
+app.use(cors({
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
+}));
 
 io.on("connection", (socket) => {
   socket.on("join-room", ({ roomId, signal }) => {
